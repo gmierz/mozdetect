@@ -1,0 +1,11 @@
+[project]
+name = "mozdetect"
+version = "0.0.1"
+description = "A python package used for change point detection at Mozilla."
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
