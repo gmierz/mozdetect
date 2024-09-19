@@ -19,7 +19,7 @@ python -m pip install poetry
 
 ## Running
 
-Next, run the following to build the package, and install dependencies:
+Next, run the following to build the package, and install dependencies. This step can be skipped though since `uv run` will implicitly build the package:
 
 ```
 uv sync
