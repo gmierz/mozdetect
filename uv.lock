@@ -41,16 +41,12 @@ wheels = [
 name = "mozdetect"
 version = "0.0.1"
 source = { editable = "." }
-
-[package.dev-dependencies]
-dev = [
+dependencies = [
     { name = "pre-commit" },
 ]
 
 [package.metadata]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pre-commit", specifier = ">=3.5.0" }]
+requires-dist = [{ name = "pre-commit", specifier = ">=3.5.0" }]
 
 [[package]]
 name = "nodeenv"

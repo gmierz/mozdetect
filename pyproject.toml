@@ -5,7 +5,9 @@ description = "A python package used for change point detection at Mozilla."
 authors = ["Gregory Mierzwinski <sparky@mozilla.com>"]
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = []
+dependencies = [
+    "pre-commit>=3.5.0",
+]
 
 [tool.poetry]
 name = "mozdetect"
@@ -45,8 +47,6 @@ ignore = [
 ]
 
 [tool.uv]
-dev-dependencies = [
-    "pre-commit>=3.5.0",
-]
+dev-dependencies = []
 
 
