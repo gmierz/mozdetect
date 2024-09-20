@@ -39,3 +39,11 @@ Pre-commit linting checks must be setup like this (run within the top-level of t
 uv sync
 uv run pre-commit install
 ```
+
+## Running tests
+
+Tests all reside in the `tests/` folder and can be run using:
+
+```
+uv run pytest
+```
