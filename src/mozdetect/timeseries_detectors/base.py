@@ -4,4 +4,19 @@
 
 
 class BaseTimeSeriesDetector:
-    pass
+    """Base timeseries detector that detectors must inherit from."""
+
+    def __init__(self, timeseries, **kwargs):
+        """Initialize the BaseTimeSeriesDetector.
+
+        :param TimeSeries timeseries: A TimeSeries object that represents
+            the timeseries to analyze.
+        """
+        self.timeseries = timeseries
+
+    def detect_changes(self):
+        """Detect changes in a timeseries.
+
+        :return: A list of Detection objects representing the regressions found.
+        """
+        pass

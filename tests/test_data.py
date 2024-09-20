@@ -4,7 +4,7 @@
 
 import pytest
 
-from mozdetect.data import InvalidNumberError, TimeSeries
+from mozdetect.data import InvalidNumberError, TimeSeries, UnknownDataTypeError
 
 
 def test_data():
@@ -67,3 +67,42 @@ def test_data_get_bad_n():
 
     with pytest.raises(InvalidNumberError):
         ts.get_previous_n(-1)
+
+
+def test_data_get_data_type():
+    ts = TimeSeries([(1, 2, "a"), (1, 2, "b"), (1, 2, "c")])
+
+    subset = ts.get_numerical_columns()
+    assert all((subset == row).all(axis=1).any() for row in [(1, 2), (1, 2), (1, 2)])
+
+    subset = ts.get_nonnumerical_columns()
+    assert all((subset == row).all(axis=1).any() for row in [("a",), ("b",), ("c",)])
+
+
+def test_data_set_data_type():
+    ts = TimeSeries([(1, 2, 3.0, "a"), (1, 2, 3.0, "a"), (1, 2, 3.0, "a")])
+
+    ts.set_data_type("numerical")
+    for row in ts:
+        assert (row == (1, 2, 3.0)).all().any()
+
+    ts.set_data_type("non-numerical")
+    for row in ts:
+        assert (row == ("a")).all().any()
+
+    ts.set_data_type([int])
+    for row in ts:
+        assert (row == (1, 2)).all().any()
+
+    ts.set_data_type("all")
+    assert (ts.data == (1, 2, 3.0, "a")).all(axis=1).all()
+
+
+def test_data_set_data_type_failues():
+    ts = TimeSeries([(1, 2, 3.0, "a"), (1, 2, 3.0, "a"), (1, 2, 3.0, "a")])
+
+    with pytest.raises(UnknownDataTypeError):
+        ts.set_data_type("bad-type")
+
+    with pytest.raises(UnknownDataTypeError):
+        ts.set_data_type(["not a type"])
