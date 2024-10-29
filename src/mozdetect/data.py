@@ -44,8 +44,8 @@ class TimeSeries:
         self._iteration_data = self._original_data
         self._data_type = "all"
 
-        self._numerical_data = self.get_numerical_columns()
-        self._nonnumerical_data = self.get_nonnumerical_columns()
+        self.numerical_data = self.get_numerical_columns()
+        self.nonnumerical_data = self.get_nonnumerical_columns()
 
         # Only set data type after getting the numberical, and
         # non-numerical columns from the original data
@@ -61,7 +61,7 @@ class TimeSeries:
         """
         for index, row in self.data.iterrows():
             self._currind = index
-            self._curr = row
+            self._curr = pandas.DataFrame(row).T
 
             yield self._curr
 
@@ -100,9 +100,9 @@ class TimeSeries:
         self._data_type = data_type
         if isinstance(self._data_type, str):
             if self._data_type == "numerical":
-                self._iteration_data = self._numerical_data
+                self._iteration_data = self.numerical_data
             elif self._data_type == "non-numerical":
-                self._iteration_data = self._nonnumerical_data
+                self._iteration_data = self.nonnumerical_data
             elif self._data_type == "all":
                 self._iteration_data = self._original_data
             else:
@@ -129,7 +129,7 @@ class TimeSeries:
             self._curr = self.data.iloc[[self._currind]]
         return self._curr
 
-    def get_next_n(self, n):
+    def get_next_n(self, n, inclusive=False):
         """Returns the next `n` data points in the time series.
 
         This methods is exclusive, and doesn't include the current data point
@@ -143,9 +143,16 @@ class TimeSeries:
         """
         if n <= 0:
             raise InvalidNumberError("Number of data points must be greater than 0.")
-        return self.data.iloc[self._currind + 1 : self._currind + n + 1]
 
-    def get_previous_n(self, n):
+        start_ind = self._currind + 1
+        end_ind = self._currind + n + 1
+        if inclusive:
+            start_ind = start_ind - 1
+            end_ind = end_ind - 1
+
+        return self.data.iloc[start_ind:end_ind]
+
+    def get_previous_n(self, n, inclusive=False):
         """Returns the previous `n` data points in the time series.
 
         This methods is exclusive, and doesn't include the current data point
@@ -159,7 +166,17 @@ class TimeSeries:
         """
         if n <= 0:
             raise InvalidNumberError("Number of data points must be greater than 0.")
-        return self.data.iloc[max(self._currind - n, 0) : self._currind]
+
+        start_ind = max(self._currind - n, 0)
+        end_ind = self._currind
+        if inclusive:
+            if self._currind == 0:
+                start_ind = 0
+            else:
+                start_ind = start_ind + 1
+            end_ind = end_ind + 1
+
+        return self.data.iloc[start_ind:end_ind]
 
     def get_numerical_columns(self):
         """Returns the data but with only numerical columns.
