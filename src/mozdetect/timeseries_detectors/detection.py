@@ -20,3 +20,10 @@ class Detection:
         self.new_value = new_value
         self.confidence = confidence
         self.location = location
+
+    def __repr__(self):
+        return (
+            f"Detection<"
+            f"previous_value={self.previous_value}, new_value={self.new_value}, "
+            f"confidence={self.confidence}, location={self.location}>"
+        )
