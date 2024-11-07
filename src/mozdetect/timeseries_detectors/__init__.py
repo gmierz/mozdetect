@@ -4,10 +4,12 @@
 
 from mozdetect.timeseries_detectors.base import BaseTimeSeriesDetector
 from mozdetect.timeseries_detectors.cdf import CDFTimeSeriesDetector
+from mozdetect.timeseries_detectors.cdf_squared import CDFSquaredTimeSeriesDetector
 
 TIMESERIES_DETECTORS = {
     "base": BaseTimeSeriesDetector,
     "cdf": CDFTimeSeriesDetector,
+    "cdf_squared": CDFSquaredTimeSeriesDetector,
 }
 
 

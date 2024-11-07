@@ -4,11 +4,9 @@
 
 from mozdetect.detectors.base import BaseDetector
 from mozdetect.detectors.cdf import CDFDetector
+from mozdetect.detectors.cdf_squared import CDFSquaredDetector
 
-DETECTORS = {
-    "base": BaseDetector,
-    "cdf": CDFDetector,
-}
+DETECTORS = {"base": BaseDetector, "cdf": CDFDetector, "cdf_squared": CDFSquaredDetector}
 
 
 def get_detectors():

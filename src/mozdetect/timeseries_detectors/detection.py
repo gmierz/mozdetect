@@ -6,7 +6,7 @@
 class Detection:
     """Used to represent a change detection in a timeseries."""
 
-    def __init__(self, previous_value, new_value, confidence, location):
+    def __init__(self, previous_value, new_value, confidence, location, direction):
         """Create a new detected change.
 
         :param float previous_value: The previous value before the detected change.
@@ -20,10 +20,12 @@ class Detection:
         self.new_value = new_value
         self.confidence = confidence
         self.location = location
+        self.direction = direction
 
     def __repr__(self):
         return (
             f"Detection<"
             f"previous_value={self.previous_value}, new_value={self.new_value}, "
-            f"confidence={self.confidence}, location={self.location}>"
+            f"confidence={self.confidence}, location={self.location}, "
+            f"direction={self.direction}>"
         )

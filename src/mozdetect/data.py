@@ -1,10 +1,13 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
+import json
 import numpy as np
 import pandas
 import traceback
+
+from collections import Counter
+from datetime import datetime, timedelta
 
 
 class InvalidNumberError(Exception):
@@ -191,3 +194,178 @@ class TimeSeries:
         :return DataFrame: Returns the data with numerical columns removed.
         """
         return self.data.select_dtypes(exclude=[np.number])
+
+
+class TelemetryTimeSeries:
+    """Provides additional telemetry-specific methods, and exposes the
+    raw data in the `raw_data` attribute to provide more customization.
+    """
+
+    def __init__(self, data, *args, **kwargs):
+        self.raw_data = data
+        self.cumulative_by_day_histograms = pandas.DataFrame()
+        self.cumulative_multiday_histograms = pandas.DataFrame()
+
+    def _build_id_to_date(self, build_id):
+        """Returns a build ID converted into a datetime.date.
+
+        :param str build_id: The build ID to convert.
+
+        :return datetime.date: The date that was parsed from the build ID.
+        """
+        if len(build_id) == 10:
+            return datetime.strptime(build_id, "%Y%m%d%H").date()
+        else:
+            return datetime.strptime(build_id, "%Y%m%d%H%M%S").date()
+
+    def get_percentiles_over_time(self, histograms=None):
+        """Returns the percentiles over time from the telemetry data."""
+
+        def _extract_percentiles(group):
+            filtered = group[group["cdf"] > 0.5]
+            retval = filtered.iloc[0][["date"]]
+            retval["p50"] = filtered.iloc[0]["bin"]
+            retval["p75"] = group[group["cdf"] > 0.75].iloc[0]["bin"]
+            retval["p95"] = group[group["cdf"] > 0.95].iloc[0]["bin"]
+            return retval
+
+        if histograms is None:
+            if not self.cumulative_by_day_histograms.empty:
+                histograms = self.cumulative_by_day_histograms
+            else:
+                histograms = self.raw_data
+
+        return (
+            histograms.groupby("date", as_index=False)[["date", "bin", "cdf"]]
+            .apply(_extract_percentiles)
+            .dropna()
+            .reset_index(drop=True)
+        )
+
+    def get_cumulative_by_day(self, start_date=None, end_date=None):
+        """Returns the data downsampled into a per-day granularity.
+
+        :param datetime.date start_date: The start date to downsample from.
+        :param datetime.date end_date: The end date to downsample to.
+
+        :return pandas.DataFrame: A pandas.DateFrame of the cumulative histograms at a per-day
+            granularity. Can also be obtained from `self.cumulative_histograms`.
+        """
+        last_start_row = 0
+        current_date = start_date or self._build_id_to_date(self.raw_data.iloc[0].build_id)
+        end_date = end_date or self._build_id_to_date(self.raw_data.iloc[-1].build_id)
+
+        while current_date <= end_date:
+            # Find the start date location
+            # TODO: get rid of while True loops
+            while True:
+                current_row = self.raw_data.iloc[last_start_row]
+                current_row_date = self._build_id_to_date(current_row.build_id)
+                if current_row_date < current_date:
+                    last_start_row += 1
+                else:
+                    break
+
+            # Gather the data from builds in the current day
+            summed_histograms_raw = Counter()
+            current_row_iloc = last_start_row
+            while current_row_iloc < len(self.raw_data):
+                current_row = self.raw_data.iloc[current_row_iloc]
+                current_row_date = self._build_id_to_date(current_row.build_id)
+                if current_row_date > current_date:
+                    break
+                if not current_row.non_norm_histogram:
+                    current_row_iloc += 1
+                    continue
+
+                summed_histograms_raw.update(json.loads(current_row.non_norm_histogram))
+                current_row_iloc += 1
+
+            summed_histogram = pandas.DataFrame(
+                list(summed_histograms_raw.items()), columns=["bin", "count"]
+            )
+            if summed_histogram.empty:
+                current_date += timedelta(days=1)
+                continue
+
+            # Produce the cumulative histogram for this day
+            summed_histogram["bin"] = summed_histogram["bin"].astype(int)
+            summed_histogram["date"] = current_date
+
+            summed_histogram = summed_histogram.sort_values(by="bin").reset_index(drop=True)
+            summed_histogram["cumulative"] = summed_histogram["count"].cumsum()
+            summed_histogram["cdf"] = (
+                summed_histogram["cumulative"] / summed_histogram["count"].sum()
+            )
+
+            self.cumulative_by_day_histograms = pandas.concat(
+                [summed_histogram.fillna(0), self.cumulative_by_day_histograms], ignore_index=True
+            )
+            current_date += timedelta(days=1)
+
+        return self.cumulative_by_day_histograms
+
+    def get_multiday_average(self, days=7):
+        """Produces a multiday average of the cumulative per-day histograms using
+        a rolling window.
+
+        :param int days: The number of days to average together.
+
+        :return pandas.DataFrame: The data with each point being a multiday average instead
+            of only a single day.
+        """
+        if self.cumulative_by_day_histograms is None:
+            raise Exception(
+                "get_multiday_average expects get_cumulative_by_day to be called first."
+            )
+
+        start_date = self.cumulative_by_day_histograms["date"].min()
+        end_date = self.cumulative_by_day_histograms["date"].max()
+
+        # Initialize the current sum with the start date
+        current_date = start_date
+        current_sum = self.cumulative_by_day_histograms[
+            self.cumulative_by_day_histograms["date"] == current_date
+        ][["bin", "count"]].reset_index(drop=True)
+
+        # Gather the first set of days-1 into a sum
+        # TODO use walrus here
+        current_date += timedelta(days=1)
+        while current_date < start_date + timedelta(days=days - 1):
+            current_sum["count"] += self.cumulative_by_day_histograms[
+                self.cumulative_by_day_histograms["date"] == current_date
+            ][["bin", "count"]].reset_index(drop=True)["count"]
+            current_date += timedelta(days=1)
+
+        # Add one day at a time to the current_sum, and remove the last day from it
+        # after adding the current_sum to the multiday_window data
+        # TODO use walrus here
+        current_date = start_date
+        date_to_add = current_date + timedelta(days=days - 1)
+        while date_to_add <= end_date:
+            # Add new date data if it has data
+            hist_to_add = self.cumulative_by_day_histograms[
+                self.cumulative_by_day_histograms["date"] == date_to_add
+            ][["bin", "count"]].reset_index(drop=True)["count"]
+            if not hist_to_add.empty:
+                current_sum["count"] += hist_to_add
+
+            # Calculate new CDF, and add to multiday_window
+            current_sum["date"] = current_date
+            current_sum["cumulative"] = current_sum["count"].cumsum()
+            current_sum["cdf"] = current_sum["cumulative"] / current_sum["count"].sum()
+            self.cumulative_multiday_histograms = pandas.concat(
+                [current_sum.copy(), self.cumulative_multiday_histograms], ignore_index=True
+            )
+
+            # Remove current date from current_sum if it had data
+            hist_to_remove = self.cumulative_by_day_histograms[
+                self.cumulative_by_day_histograms["date"] == current_date
+            ][["bin", "count"]].reset_index(drop=True)["count"]
+            if not hist_to_remove.empty:
+                current_sum["count"] -= hist_to_remove
+
+            current_date += timedelta(days=1)
+            date_to_add += timedelta(days=1)
+
+        return self.cumulative_multiday_histograms

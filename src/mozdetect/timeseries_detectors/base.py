@@ -14,7 +14,8 @@ class BaseTimeSeriesDetector:
             the timeseries to analyze.
         """
         self.timeseries = timeseries
-        self.timeseries.set_data_type("numerical")
+        if hasattr(self.timeseries, "set_data_type"):
+            self.timeseries.set_data_type("numerical")
 
     def get_sum_of_previous_n(self, n, inclusive=False):
         """Returns the sum of the past n data points.
