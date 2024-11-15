@@ -1,8 +1,8 @@
 [project]
 name = "mozdetect"
-version = "0.0.1"
+version = "0.0.4"
 description = "A python package used for change point detection at Mozilla."
-authors = ["Gregory Mierzwinski <sparky@mozilla.com>"]
+authors = [{ name="Gregory Mierzwinski", email="sparky@mozilla.com" }]
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
@@ -14,17 +14,9 @@ dependencies = [
     "scipy>=1.10.1",
 ]
 
-[tool.poetry]
-name = "mozdetect"
-version = "0.0.1"
-description = "A python package used for change point detection at Mozilla."
-authors = ["Gregory Mierzwinski <sparky@mozilla.com>"]
-readme = "README.md"
-packages = [{from="src", include="mozdetect"}]
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 100
