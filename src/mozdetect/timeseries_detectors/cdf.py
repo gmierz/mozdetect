@@ -1,11 +1,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from matplotlib import pyplot as plt
 
 from mozdetect.detectors import CDFDetector
 from mozdetect.timeseries_detectors.base import BaseTimeSeriesDetector
 from mozdetect.timeseries_detectors.detection import Detection
+from mozdetect.utils import is_dev_mode
 
 
 class CDFTimeSeriesDetector(BaseTimeSeriesDetector):
@@ -41,14 +41,17 @@ class CDFTimeSeriesDetector(BaseTimeSeriesDetector):
                 detections.append(Detection(cdf_diff, prev_detection[0], cdf_diff_pct, build_id))
             prev_detection = (cdf_diff, cdf_diff_pct, cdf_diff_total)
 
-        plt.figure()
-        plt.plot(cdf_diffs)
-        plt.xticks(
-            ticks=list(range(len(cdf_diffs))),
-            labels=list(build_ids["build_id"])[group_size : -group_size + 1],
-        )
-        # print(list(build_ids["build_id"]))
-        plt.show()
+        if is_dev_mode():
+            from matplotlib import pyplot as plt
+
+            plt.figure()
+            plt.plot(cdf_diffs)
+            plt.xticks(
+                ticks=list(range(len(cdf_diffs))),
+                labels=list(build_ids["build_id"])[group_size : -group_size + 1],
+            )
+
+            plt.show()
 
         if max_detection:
             return detections, [max_detection]

@@ -1,6 +1,6 @@
 [project]
 name = "mozdetect"
-version = "0.0.4"
+version = "0.0.5"
 description = "A python package used for change point detection at Mozilla."
 authors = [{ name="Gregory Mierzwinski", email="sparky@mozilla.com" }]
 readme = "README.md"
