@@ -6,7 +6,7 @@
 class Detection:
     """Used to represent a change detection in a timeseries."""
 
-    def __init__(self, previous_value, new_value, confidence, location, direction):
+    def __init__(self, previous_value, new_value, confidence, location, direction, **kwargs):
         """Create a new detected change.
 
         :param float previous_value: The previous value before the detected change.
@@ -16,16 +16,20 @@ class Detection:
             build_id, or something else that represents the place at which a regression
             was detected.
         """
+        # These are required for any detection
         self.previous_value = previous_value
         self.new_value = new_value
         self.confidence = confidence
         self.location = location
         self.direction = direction
 
+        # Optional settings for a detection get set in kwargs
+        self.optional_detection_info = kwargs
+
     def __repr__(self):
         return (
             f"Detection<"
             f"previous_value={self.previous_value}, new_value={self.new_value}, "
             f"confidence={self.confidence}, location={self.location}, "
-            f"direction={self.direction}>"
+            f"direction={self.direction}, optional_detection_info={self.optional_detection_info}>"
         )
