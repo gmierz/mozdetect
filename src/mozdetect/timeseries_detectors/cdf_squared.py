@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import logging
 import numpy as np
 import pandas
 
@@ -11,6 +12,8 @@ from mozdetect.detectors import CDFSquaredDetector
 from mozdetect.timeseries_detectors.base import BaseTimeSeriesDetector
 from mozdetect.timeseries_detectors.detection import Detection
 from mozdetect.utils import lowpass_filter
+
+logger = logging.getLogger("CDFSquaredTimeSeries")
 
 
 class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector):
@@ -55,7 +58,7 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector):
 
             current_date += timedelta(days=1)
 
-        print(differences)
+        logger.debug(differences)
         differences["filtered_sq_diff"] = lowpass_filter(differences["sq_diff"], 20, 100)
 
         return differences
@@ -180,8 +183,9 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector):
         table = PrettyTable()
         table.field_names = ["Metric", "Before", "After"]
         table.add_rows(detection_info)
-        print("Alert Generated: " + detection["date"].strftime("%Y-%m-%d"))
-        print(table)
+
+        logger.debug("Alert Generated: " + detection["date"].strftime("%Y-%m-%d"))
+        logger.debug(table)
 
         return {d[0]: d[1:] for d in detection_info}
 
@@ -209,7 +213,7 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector):
                     detection_info["Total Samples"][1],
                     detection_info["CDF Diff"][1],
                     detection["date"],
-                    detection["direction"][1],
+                    detection["direction"],
                 )
             )
 

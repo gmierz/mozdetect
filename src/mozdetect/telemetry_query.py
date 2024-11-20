@@ -1,9 +1,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import logging
 
 from datetime import datetime
 from google.cloud import bigquery
+
+logger = logging.getLogger("TelemetryQuery")
 
 
 class BigQueryClient:
@@ -11,11 +14,11 @@ class BigQueryClient:
 
     def __init__(self, project="moz-fx-data-bq-performance"):
         if BigQueryClient.client is None:
-            BigQueryClient.initialize_bq_client()
+            BigQueryClient.initialize_bq_client(project)
 
     @classmethod
     def initialize_bq_client(cls, project="moz-fx-data-bq-performance"):
-        BigQueryClient.client = bigquery.Client()
+        BigQueryClient.client = bigquery.Client(project)
 
 
 def get_years_to_query():
@@ -97,10 +100,10 @@ def _get_fog_desktop_metric_table(probe, os):
     return job.to_dataframe()
 
 
-def get_metric_table(probe, os, process=None, android=False, use_fog=False):
-    BigQueryClient()
+def get_metric_table(probe, os, process=None, android=False, use_fog=False, project="mozdata"):
+    BigQueryClient(project=project)
 
-    print("Running query...")
+    logger.debug("Running query...")
     if android:
         return _get_android_metric_table(probe, os, process)
     elif not use_fog:
