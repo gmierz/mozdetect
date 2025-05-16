@@ -105,7 +105,7 @@ def get_metric_table(probe, os, process=None, android=False, use_fog=False, proj
 
     logger.debug("Running query...")
     if android:
-        return _get_android_metric_table(probe, os, process)
+        return _get_android_metric_table(probe)
     elif not use_fog:
         if process is None:
             raise ValueError("Missing process argument for non-fog telemetry probes.")
