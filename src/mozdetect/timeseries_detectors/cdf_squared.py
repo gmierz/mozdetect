@@ -214,6 +214,7 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector):
                     detection_info["CDF Diff"][1],
                     detection["date"],
                     detection["direction"],
+                    kwargs=detection_info,
                 )
             )
 
