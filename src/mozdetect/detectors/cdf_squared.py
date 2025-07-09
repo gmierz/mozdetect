@@ -6,7 +6,7 @@ import pandas
 from mozdetect.detectors.base import BaseDetector
 
 
-class CDFSquaredDetector(BaseDetector):
+class CDFSquaredDetector(BaseDetector, detector_name="cdf_squared"):
     """Uses the CDF of two groups of histograms to detect changes."""
 
     def detect_changes(self, groups=None, **kwargs):

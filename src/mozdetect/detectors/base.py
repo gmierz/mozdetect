@@ -3,8 +3,32 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+class DetectorRegistry:
+    _detectors = {}
+
+    @staticmethod
+    def add(detector_class, detector_name):
+        """Add a detector to the registry of detectors.
+
+        Detectors added to the registry will become available through the `get_detectors`
+        method using the provided `detector_name`.
+
+        :param str detector_name: Name of the detector.
+        """
+        DetectorRegistry._detectors[detector_name] = detector_class
+
+    @staticmethod
+    def get_detectors():
+        """Return all the detectors that were gathered."""
+        return DetectorRegistry._detectors
+
+
 class BaseDetector:
     """Base class for all group detectors."""
+
+    def __init_subclass__(cls, detector_name, **kwargs):
+        super().__init_subclass__(**kwargs)
+        DetectorRegistry.add(cls, detector_name)
 
     def __init__(self, groups=None, **kwargs):
         """Initialize the detector.

@@ -196,12 +196,13 @@ class TimeSeries:
         return self.data.select_dtypes(exclude=[np.number])
 
 
-class TelemetryTimeSeries:
+class TelemetryTimeSeries(TimeSeries):
     """Provides additional telemetry-specific methods, and exposes the
     raw data in the `raw_data` attribute to provide more customization.
     """
 
     def __init__(self, data, *args, **kwargs):
+        super().__init__(data, *args, **kwargs)
         self.raw_data = data
         self.cumulative_by_day_histograms = pandas.DataFrame()
         self.cumulative_multiday_histograms = pandas.DataFrame()

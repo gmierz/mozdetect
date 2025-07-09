@@ -16,7 +16,7 @@ from mozdetect.utils import lowpass_filter
 logger = logging.getLogger("CDFSquaredTimeSeries")
 
 
-class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector):
+class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_name="cdf_squared"):
     """Analyzes a time series of histograms using CDFs to detect changes."""
 
     def __init__(self, timeseries, start_date=None, end_date=None, **kwargs):

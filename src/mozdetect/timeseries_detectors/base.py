@@ -4,8 +4,34 @@
 import pandas
 
 
+class TimeSeriesDetectorRegistry:
+    _timeseries_detectors = {}
+
+    @staticmethod
+    def add(timeseries_detector_class, timeseries_detector_name):
+        """Add a timeseries detector to the registry of timeseries detectors.
+
+        Timeseris Detectors added to the registry will become available through the
+        `get_timeseries_detectors` method using the provided `timeseries_detector_name`.
+
+        :param str timeseries_detector_name: Name of the timeseries detector.
+        """
+        TimeSeriesDetectorRegistry._timeseries_detectors[
+            timeseries_detector_name
+        ] = timeseries_detector_class
+
+    @staticmethod
+    def get_timeseries_detectors():
+        """Return all the timeseries detectors that were gathered."""
+        return TimeSeriesDetectorRegistry._timeseries_detectors
+
+
 class BaseTimeSeriesDetector:
     """Base timeseries detector that detectors must inherit from."""
+
+    def __init_subclass__(cls, timeseries_detector_name, **kwargs):
+        super().__init_subclass__(**kwargs)
+        TimeSeriesDetectorRegistry.add(cls, timeseries_detector_name)
 
     def __init__(self, timeseries, **kwargs):
         """Initialize the BaseTimeSeriesDetector.
@@ -14,8 +40,6 @@ class BaseTimeSeriesDetector:
             the timeseries to analyze.
         """
         self.timeseries = timeseries
-        if hasattr(self.timeseries, "set_data_type"):
-            self.timeseries.set_data_type("numerical")
 
     def get_sum_of_previous_n(self, n, inclusive=False):
         """Returns the sum of the past n data points.
