@@ -47,7 +47,10 @@ The detector only needs to return a dictionary with information about the compar
 
 ### Testing Techniques
 
-After the new technique was added, create a new testing script. This script can exist anywhere, but there's a special folder that can be added to the top-level of the repo called `sample-scripts` that can contain the script and it will be ignored when making commits. See the example in `examples/sample_detection_run.py` for how to run the detection.
+After the new technique was added, create a new testing script. This script can exist anywhere, but there's a special folder that can be added to the top-level of the repo called `sample-scripts` that can contain the script and it will be ignored when making commits. See the example in `examples/sample_detection_run.py` for how to run the detection. It can be run using the following from the top-level of the repo:
+```
+uv run examples/sample_detection_run.py
+```
 
 At the moment, the only detection techniques available use data from BigQuery. This means that you will need to login locally, and ensure that you have access to the `mozdata` project. Follow [these instructions](https://cloud.google.com/sdk/docs/install) for how to install the tool, then run the following to login and set the project:
 ```
