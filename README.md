@@ -76,10 +76,15 @@ uv sync
 uv run pre-commit install
 ```
 
-## Running tests
+## Running tests, and linting
 
 Tests all reside in the `tests/` folder and can be run using:
 
 ```
 uv run pytest
+```
+
+Linting is performed through pre-commit when you commit, however, it's possible to run it directly without performing a commit:
+```
+uv run pre-commit run --all-files
 ```
