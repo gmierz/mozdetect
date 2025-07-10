@@ -290,7 +290,7 @@ class TelemetryTimeSeries(TimeSeries):
                 continue
 
             # Produce the cumulative histogram for this day
-            summed_histogram["bin"] = summed_histogram["bin"].astype(int)
+            summed_histogram["bin"] = summed_histogram["bin"].astype("Int64")
             summed_histogram["date"] = current_date
 
             summed_histogram = summed_histogram.sort_values(by="bin").reset_index(drop=True)

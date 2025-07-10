@@ -7,6 +7,7 @@ import pandas
 
 from datetime import timedelta
 from prettytable import PrettyTable
+from scipy.signal import find_peaks
 
 from mozdetect.detectors import CDFSquaredDetector
 from mozdetect.timeseries_detectors.base import BaseTimeSeriesDetector
@@ -41,7 +42,7 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_n
 
         current_date = start_date
         differences = pandas.DataFrame()
-        while current_date <= end_date - timedelta(days=15):
+        while current_date <= end_date - timedelta(days=7):
             current_date_hist = self.timeseries.cumulative_multiday_histograms[
                 self.timeseries.cumulative_multiday_histograms["date"] == current_date
             ][["bin", "cdf"]]
@@ -67,42 +68,20 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_n
         start_date, end_date = self._coalesce_dates(
             differences["date"].min(), differences["date"].max()
         )
-        current_date = start_date + timedelta(days=7)
 
         threshold = abs(differences["filtered_sq_diff"]).quantile(alert_threshold)
 
-        tracking_diff = False
-        found_peak = False
+        peaks, _ = find_peaks(differences["filtered_sq_diff"], height=threshold, distance=3)
+        valleys, _ = find_peaks(-differences["filtered_sq_diff"], height=threshold, distance=3)
 
-        last_value = None
-        detections = pandas.DataFrame()
-        while current_date <= end_date - timedelta(days=15):
-            diff = differences[differences["date"] == current_date]["filtered_sq_diff"].iloc[0]
+        df_peaks = pandas.DataFrame({"date": differences.loc[peaks, "date"], "direction": "up"})
+        df_valleys = pandas.DataFrame(
+            {"date": differences.loc[valleys, "date"], "direction": "down"}
+        )
 
-            if tracking_diff and abs(diff) > last_value:
-                # heading for new peak
-                found_peak = False
-
-            if not found_peak and tracking_diff and abs(diff) < last_value:
-                if diff > 0:
-                    direction = "up"
-                else:
-                    direction = "down"
-                new_row = pandas.DataFrame({"date": [current_date], "direction": [direction]})
-                detections = pandas.concat([detections, new_row], ignore_index=True)
-                found_peak = True
-
-            if tracking_diff:
-                last_value = abs(diff)
-
-            if abs(diff) <= threshold:
-                found_peak = False
-                tracking_diff = False
-
-            if not tracking_diff and abs(diff) > threshold:
-                tracking_diff = True
-                last_value = abs(diff)
-            current_date += timedelta(days=1)
+        detections = (
+            pandas.concat([df_peaks, df_valleys]).sort_values("date").reset_index(drop=True)
+        )
 
         return detections
 
