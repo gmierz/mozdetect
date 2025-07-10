@@ -13,18 +13,14 @@ from mozdetect.timeseries_detectors import BaseTimeSeriesDetector, Detection
 from tests.support import get_sample_telemetry_data
 
 
-class TestDetector(BaseDetector, detector_name="test"):
-    __test__ = False
-
+class DetectorTest(BaseDetector, detector_name="test"):
     def detect_changes(self):
         return {"detection": True}
 
 
-class TestTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_name="test"):
-    __test__ = False
-
+class TimeSeriesDetectorTest(BaseTimeSeriesDetector, timeseries_detector_name="test"):
     def detect_changes(self):
-        detector = TestDetector()
+        detector = DetectorTest()
 
         detections = []
         for i in range(5):
@@ -44,7 +40,7 @@ class TestTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_name="t
 
 def get_ts_detector():
     sample_data = get_sample_telemetry_data()
-    return TestTimeSeriesDetector(sample_data)
+    return TimeSeriesDetectorTest(sample_data)
 
 
 def test_get_detectors():

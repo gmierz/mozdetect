@@ -51,6 +51,10 @@ def _get_android_metric_table(probe):
     return job.to_dataframe()
 
 
+def _get_os_filter(os):
+    return "" if os.lower() == "all" else f"AND os = '{os}'"
+
+
 def _get_non_fog_desktop_metric_table(probe, process, os):
     previous_year, current_year, next_year = get_years_to_query()
 
@@ -60,9 +64,9 @@ def _get_non_fog_desktop_metric_table(probe, process, os):
         FROM
             moz-fx-data-shared-prod.glam_etl.glam_desktop_nightly_aggregates
         WHERE
-            metric ='{probe}'
+            metric = '{probe}'
             AND process = "{process}"
-            AND os = '{os}'
+            {_get_os_filter(os)}
             AND build_id != "*"
             AND (
                 build_id like '{previous_year}%'
@@ -85,10 +89,10 @@ def _get_fog_desktop_metric_table(probe, os):
         FROM
             moz-fx-data-shared-prod.glam_etl.glam_fog_nightly_aggregates
         WHERE
-            metric ='{probe}'
+            metric = '{probe}'
             AND ping_type = "*"
-            AND os = '{os}'
             AND build_id != "*"
+            {_get_os_filter(os)}
             AND (
                 build_id like '{previous_year}%'
                 OR build_id like '{current_year}%'
@@ -102,6 +106,9 @@ def _get_fog_desktop_metric_table(probe, os):
 
 def get_metric_table(probe, os, process=None, android=False, use_fog=False, project="mozdata"):
     BigQueryClient(project=project)
+
+    if os.lower() == "android" and not android:
+        android = True
 
     logger.debug("Running query...")
     if android:
