@@ -4,6 +4,10 @@
 import logging
 import numpy as np
 import pandas
+import base64
+from io import BytesIO
+
+from matplotlib import pyplot as plt
 
 from datetime import timedelta
 from prettytable import PrettyTable
@@ -166,7 +170,75 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_n
         logger.debug("Alert Generated: " + detection["date"].strftime("%Y-%m-%d"))
         logger.debug(table)
 
-        return {d[0]: d[1:] for d in detection_info}
+        detection_dict = {d[0]: d[1:] for d in detection_info}
+
+        # Generate plot and add to detection info
+        try:
+            plot_image = self._plot_detection(
+                detection["date"], before_histogram, after_histogram, detection["direction"]
+            )
+            detection_dict["graph"] = plot_image
+        except Exception as e:
+            logger.info(f"Failed to generate detection plot: {e}")
+            detection_dict["graph"] = None
+
+        return detection_dict
+
+    def _plot_detection(self, detection_date, before_histogram, after_histogram, direction):
+        """Create a graph showing the CDF before and after the detection.
+
+        :param datetime detection_date: The date of the detection.
+        :param DataFrame before_histogram: Histogram data before the detection.
+        :param DataFrame after_histogram: Histogram data after the detection.
+        :param str direction: The direction of the detection (up/down).
+        :return str: Base64-encoded PNG image string.
+        """
+        # Create the plot
+        plt.figure(figsize=(12, 6))
+
+        # Plot both CDFs
+        plt.plot(
+            before_histogram["bin"],
+            before_histogram["cdf"],
+            label="Before",
+            linewidth=2,
+            color="blue",
+        )
+        plt.plot(
+            after_histogram["bin"],
+            after_histogram["cdf"],
+            label="After",
+            linewidth=2,
+            color="red",
+        )
+
+        # Find the maximum bin value where CDF <= 0.99 for both histograms
+        max_bin_before = before_histogram[before_histogram["cdf"] <= 0.99]["bin"].max()
+        max_bin_after = after_histogram[after_histogram["cdf"] <= 0.99]["bin"].max()
+        max_bin = max(max_bin_before, max_bin_after)
+        if not pandas.isna(max_bin):
+            plt.xlim(left=0, right=max_bin)
+
+        # Add labels and title
+        plt.xlabel("Bin", fontsize=12)
+        plt.ylabel("Cumulative Distribution (CDF)", fontsize=12)
+        plt.title(
+            f"CDF Comparison: Detection on {detection_date.strftime('%Y-%m-%d')} "
+            f"(Direction: {direction})",
+            fontsize=14,
+            fontweight="bold",
+        )
+        plt.legend(fontsize=11)
+        plt.grid(True, alpha=0.3)
+
+        # Save to BytesIO buffer and encode as base64
+        buf = BytesIO()
+        plt.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+        buf.seek(0)
+        img_str = base64.b64encode(buf.read()).decode("utf-8")
+        buf.close()
+        plt.close()
+        return img_str
 
     def detect_changes(self, multiday_average_days=7, alert_threshold=0.85, **kwargs):
         """Detects changes in a telemetry probe using the CDF squared detection method.
