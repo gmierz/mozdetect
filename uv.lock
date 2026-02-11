@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.8"
 resolution-markers = [
     "python_full_version < '3.10'",
@@ -857,17 +857,17 @@ source = { editable = "." }
 dependencies = [
     { name = "db-dtypes" },
     { name = "google-cloud-bigquery" },
+    { name = "matplotlib" },
     { name = "pandas" },
     { name = "pre-commit" },
     { name = "prettytable" },
+    { name = "pyqt5" },
+    { name = "pyqt5-qt5" },
     { name = "scipy" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "matplotlib" },
-    { name = "pyqt5" },
-    { name = "pyqt5-qt5" },
     { name = "pytest" },
 ]
 
@@ -875,19 +875,17 @@ dev = [
 requires-dist = [
     { name = "db-dtypes", specifier = ">=1.3.0" },
     { name = "google-cloud-bigquery", specifier = ">=3.26.0" },
+    { name = "matplotlib", specifier = ">=3.7.5" },
     { name = "pandas", specifier = ">=2.0.3" },
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "prettytable", specifier = ">=3.11.0" },
+    { name = "pyqt5", specifier = ">=5.15.11" },
+    { name = "pyqt5-qt5", specifier = ">=5.15.2" },
     { name = "scipy", specifier = ">=1.10.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "matplotlib", specifier = ">=3.7.5" },
-    { name = "pyqt5", specifier = ">=5.15.11" },
-    { name = "pyqt5-qt5", specifier = ">=5.15.2" },
-    { name = "pytest", specifier = ">=8.3.3" },
-]
+dev = [{ name = "pytest", specifier = ">=8.3.3" }]
 
 [[package]]
 name = "nodeenv"
