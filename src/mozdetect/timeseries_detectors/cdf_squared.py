@@ -172,15 +172,24 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_n
 
         detection_dict = {d[0]: d[1:] for d in detection_info}
 
-        # Generate plot and add to detection info
+        # Generate plot and add to detection info attachments
+        detection_dict["attachments"] = []
         try:
             plot_image = self._plot_detection(
                 detection["date"], before_histogram, after_histogram, detection["direction"]
             )
-            detection_dict["graph"] = plot_image
+            detection_dict["attachments"].append(
+                {
+                    "data": plot_image,
+                    "content_type": "image/png",
+                    "file_name": f"cdf_difference_{detection['date']}.png",
+                    "summary": (
+                        "Graph showing the CDF difference between before and after the detection."
+                    ),
+                }
+            )
         except Exception as e:
             logger.info(f"Failed to generate detection plot: {e}")
-            detection_dict["graph"] = None
 
         return detection_dict
 
