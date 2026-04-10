@@ -28,7 +28,7 @@ def get_years_to_query():
     return previous_year, current_year, next_year
 
 
-def _get_android_metric_table(probe):
+def _get_android_metric_table(probe, from_build_date=None):
     previous_year, current_year, next_year = get_years_to_query()
 
     job = BigQueryClient.client.query(
@@ -41,11 +41,8 @@ def _get_android_metric_table(probe):
             AND ping_type = 'metrics'
             AND os = 'Android'
             AND build_id != '*'
-            AND (
-                build_id like '{previous_year}%'
-                OR build_id like '{current_year}%'
-                OR build_id like '{next_year}%'
-            )
+            {_get_time_filter(from_build_date)}
+        ORDER BY build_id
     """
     )
     return job.to_dataframe()
@@ -55,9 +52,27 @@ def _get_os_filter(os):
     return "" if os.lower() == "all" else f"AND os = '{os}'"
 
 
-def _get_non_fog_desktop_metric_table(probe, process, os):
-    previous_year, current_year, next_year = get_years_to_query()
+def _get_time_filter(from_build_date):
+    if from_build_date:
+        return f"""
+            AND PARSE_DATETIME(
+                '%Y-%m-%d %H:%M:%S', build_date
+            ) >= PARSE_DATETIME(
+                '%Y-%m-%d %H:%M:%S', '{from_build_date}'
+            )
+        """
 
+    previous_year, current_year, next_year = get_years_to_query()
+    return f"""
+            AND (
+                build_id like '{previous_year}%'
+                OR build_id like '{current_year}%'
+                OR build_id like '{next_year}%'
+            )
+    """
+
+
+def _get_non_fog_desktop_metric_table(probe, process, os):
     job = BigQueryClient.client.query(
         f"""
         SELECT *
@@ -68,11 +83,7 @@ def _get_non_fog_desktop_metric_table(probe, process, os):
             AND process = "{process}"
             {_get_os_filter(os)}
             AND build_id != "*"
-            AND (
-                build_id like '{previous_year}%'
-                OR build_id like '{current_year}%'
-                OR build_id like '{next_year}%'
-            )
+            {_get_time_filter(None)}
         ORDER BY build_id
     """
     )
@@ -80,9 +91,8 @@ def _get_non_fog_desktop_metric_table(probe, process, os):
     return job.to_dataframe()
 
 
-def _get_fog_desktop_metric_table(probe, os):
+def _get_fog_desktop_metric_table(probe, os, from_build_date=None):
     previous_year, current_year, next_year = get_years_to_query()
-
     job = BigQueryClient.client.query(
         f"""
         SELECT *
@@ -93,18 +103,16 @@ def _get_fog_desktop_metric_table(probe, os):
             AND ping_type = "*"
             AND build_id != "*"
             {_get_os_filter(os)}
-            AND (
-                build_id like '{previous_year}%'
-                OR build_id like '{current_year}%'
-                OR build_id like '{next_year}%'
-            )
+            {_get_time_filter(from_build_date)}
         ORDER BY build_id
     """
     )
     return job.to_dataframe()
 
 
-def get_metric_table(probe, os, process=None, android=False, use_fog=False, project="mozdata"):
+def get_metric_table(
+    probe, os, process=None, android=False, use_fog=True, project="mozdata", from_build_date=None
+):
     BigQueryClient(project=project)
 
     if os.lower() == "android" and not android:
@@ -112,10 +120,12 @@ def get_metric_table(probe, os, process=None, android=False, use_fog=False, proj
 
     logger.debug("Running query...")
     if android:
-        return _get_android_metric_table(probe)
+        return _get_android_metric_table(probe, from_build_date=from_build_date)
     elif not use_fog:
         if process is None:
             raise ValueError("Missing process argument for non-fog telemetry probes.")
+        if from_build_date:
+            raise ValueError("Cannot use from_build_date with non-FOG data.")
         return _get_non_fog_desktop_metric_table(probe, process, os)
     else:
-        return _get_fog_desktop_metric_table(probe, os)
+        return _get_fog_desktop_metric_table(probe, os, from_build_date=from_build_date)
