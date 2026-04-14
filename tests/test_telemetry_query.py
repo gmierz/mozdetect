@@ -99,7 +99,7 @@ def test_telemetry_query_fog_from_build_date(mocked_bq_client):
     query = mocked_client.query.call_args_list[0][0][0]
     assert "fake_probe" in query
     assert "2025-01-01 00:00:00" in query
-    assert "PARSE_DATETIME" in query
+    assert "build_date >=" in query
     assert "build_id like" not in query
 
 
@@ -130,7 +130,7 @@ def test_telemetry_query_android_from_build_date(mocked_bq_client):
     assert "fake_probe" in query
     assert "glam_fenix_nightly_aggregates" in query
     assert "2025-06-15 00:00:00" in query
-    assert "PARSE_DATETIME" in query
+    assert "build_date >=" in query
     assert "build_id like" not in query
 
 
