@@ -55,11 +55,7 @@ def _get_os_filter(os):
 def _get_time_filter(from_build_date):
     if from_build_date:
         return f"""
-            AND PARSE_DATETIME(
-                '%Y-%m-%d %H:%M:%S', build_date
-            ) >= PARSE_DATETIME(
-                '%Y-%m-%d %H:%M:%S', '{from_build_date}'
-            )
+            AND build_date >= '{from_build_date}'
         """
 
     previous_year, current_year, next_year = get_years_to_query()
