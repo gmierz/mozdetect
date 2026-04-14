@@ -333,9 +333,11 @@ class TelemetryTimeSeries(TimeSeries):
         # TODO use walrus here
         current_date += timedelta(days=1)
         while current_date < start_date + timedelta(days=days - 1):
-            current_sum["count"] += self.cumulative_by_day_histograms[
+            hist_to_add = self.cumulative_by_day_histograms[
                 self.cumulative_by_day_histograms["date"] == current_date
             ][["bin", "count"]].reset_index(drop=True)["count"]
+            if not hist_to_add.empty:
+                current_sum["count"] += hist_to_add
             current_date += timedelta(days=1)
 
         # Add one day at a time to the current_sum, and remove the last day from it

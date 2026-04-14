@@ -23,11 +23,11 @@ class CDFSquaredDetector(BaseDetector, detector_name="cdf_squared"):
         merged_hist["diff"] = merged_hist["cdf_current"] - merged_hist["cdf_next"]
         merged_hist["sq_diff"] = (merged_hist["cdf_next"] - merged_hist["cdf_current"]) ** 2
 
+        def __sign(x):
+            return (x > 0) - (x < 0)
+
         return {
             "diff": [merged_hist["diff"].sum()],
-            "sq_diff": [
-                merged_hist["sq_diff"].sum()
-                * ((merged_hist["diff"].sum()) / abs(merged_hist["diff"].sum()))
-            ],
+            "sq_diff": [merged_hist["sq_diff"].sum() * __sign(float(merged_hist["diff"].sum()))],
             "maxmin": (abs(merged_hist["diff"].min()) + abs(merged_hist["diff"].max())),
         }
