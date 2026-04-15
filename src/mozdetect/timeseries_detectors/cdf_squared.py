@@ -172,6 +172,9 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_n
 
         detection_dict = {d[0]: d[1:] for d in detection_info}
 
+        # Store data representing the data before and after the detection
+        detection_dict["data"] = {"before": before_histogram, "after": after_histogram}
+
         # Generate plot and add to detection info attachments
         detection_dict["attachments"] = []
         try:
