@@ -174,8 +174,8 @@ class CDFSquaredTimeSeriesDetector(BaseTimeSeriesDetector, timeseries_detector_n
 
         # Store data representing the data before and after the detection
         detection_dict["additional_data"] = {
-            "before": before_histogram[["bin", "cdf", "count"]].to_dict(orient="list"),
-            "after": after_histogram[["bin", "cdf", "count"]].to_dict(orient="list"),
+            "before": before_histogram[["bin", "cdf"]].dropna().to_dict(orient="list"),
+            "after": after_histogram[["bin", "cdf"]].dropna().to_dict(orient="list"),
         }
 
         # Generate plot and add to detection info attachments
