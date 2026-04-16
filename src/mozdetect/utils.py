@@ -13,6 +13,11 @@ def butter_lowpass(cutoff, fs, order=5):
 
 
 def lowpass_filter(data, cutoff, fs, order=5):
+    # filtfilt requires len(data) > padlen = 3 * (order + 1); reduce order if needed
+    while order > 0 and len(data) <= 3 * (order + 1):
+        order -= 1
+    if order == 0:
+        return data
     b, a = butter_lowpass(cutoff, fs, order=order)
     y = filtfilt(b, a, data)
     return y
