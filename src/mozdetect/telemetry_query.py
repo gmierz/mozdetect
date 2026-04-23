@@ -116,6 +116,34 @@ def _get_fog_desktop_metric_table(probe, os, from_build_date=None, label=None):
     return job.to_dataframe()
 
 
+def get_metric_labels(probe, os, project="mozdata"):
+    """Returns the list of labels for a labeled FOG metric probe.
+
+    :param str probe: The probe name to query labels for.
+    :param str os: The OS to filter by, or "all" for no filter.
+    :param str project: The BigQuery project to use.
+
+    :return list: A sorted list of label strings for the probe.
+    """
+    BigQueryClient(project=project)
+
+    job = BigQueryClient.client.query(
+        f"""
+        SELECT DISTINCT metric_key
+        FROM moz-fx-data-shared-prod.glam_etl.glam_fog_nightly_aggregates
+        WHERE
+            metric = '{probe}'
+            AND build_id != '*'
+            AND metric_key != ''
+            AND build_date >= FORMAT_DATE('%Y-%m-%d', DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+            AND ping_type = '*'
+            {_get_os_filter(os)}
+        ORDER BY metric_key
+    """
+    )
+    return [row.metric_key for row in job.result()]
+
+
 def get_metric_table(
     probe,
     os,
