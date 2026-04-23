@@ -6,6 +6,9 @@ import logging
 from datetime import datetime
 from google.cloud import bigquery
 
+
+LABELED_METRIC_TYPES = {"labeled_timing_distribution", "labeled_memory_distribution"}
+
 logger = logging.getLogger("TelemetryQuery")
 
 
@@ -28,7 +31,7 @@ def get_years_to_query():
     return previous_year, current_year, next_year
 
 
-def _get_android_metric_table(probe, from_build_date=None):
+def _get_android_metric_table(probe, from_build_date=None, label=None):
     previous_year, current_year, next_year = get_years_to_query()
 
     job = BigQueryClient.client.query(
@@ -42,6 +45,7 @@ def _get_android_metric_table(probe, from_build_date=None):
             AND os = 'Android'
             AND build_id != '*'
             {_get_time_filter(from_build_date)}
+            {_get_label_filter(label)}
         ORDER BY build_id
     """
     )
@@ -50,6 +54,10 @@ def _get_android_metric_table(probe, from_build_date=None):
 
 def _get_os_filter(os):
     return "" if os.lower() == "all" else f"AND os = '{os}'"
+
+
+def _get_label_filter(label):
+    return "" if label is None else f"AND metric_key = '{label}'"
 
 
 def _get_time_filter(from_build_date):
@@ -68,7 +76,7 @@ def _get_time_filter(from_build_date):
     """
 
 
-def _get_non_fog_desktop_metric_table(probe, process, os):
+def _get_non_fog_desktop_metric_table(probe, process, os, label=None):
     job = BigQueryClient.client.query(
         f"""
         SELECT *
@@ -80,6 +88,7 @@ def _get_non_fog_desktop_metric_table(probe, process, os):
             {_get_os_filter(os)}
             AND build_id != "*"
             {_get_time_filter(None)}
+            {_get_label_filter(label)}
         ORDER BY build_id
     """
     )
@@ -87,7 +96,7 @@ def _get_non_fog_desktop_metric_table(probe, process, os):
     return job.to_dataframe()
 
 
-def _get_fog_desktop_metric_table(probe, os, from_build_date=None):
+def _get_fog_desktop_metric_table(probe, os, from_build_date=None, label=None):
     previous_year, current_year, next_year = get_years_to_query()
     job = BigQueryClient.client.query(
         f"""
@@ -100,6 +109,7 @@ def _get_fog_desktop_metric_table(probe, os, from_build_date=None):
             AND build_id != "*"
             {_get_os_filter(os)}
             {_get_time_filter(from_build_date)}
+            {_get_label_filter(label)}
         ORDER BY build_id
     """
     )
@@ -107,7 +117,14 @@ def _get_fog_desktop_metric_table(probe, os, from_build_date=None):
 
 
 def get_metric_table(
-    probe, os, process=None, android=False, use_fog=True, project="mozdata", from_build_date=None
+    probe,
+    os,
+    process=None,
+    android=False,
+    use_fog=True,
+    project="mozdata",
+    from_build_date=None,
+    label=None,
 ):
     BigQueryClient(project=project)
 
@@ -116,12 +133,24 @@ def get_metric_table(
 
     logger.debug("Running query...")
     if android:
-        return _get_android_metric_table(probe, from_build_date=from_build_date)
+        result = _get_android_metric_table(probe, from_build_date=from_build_date, label=label)
     elif not use_fog:
         if process is None:
             raise ValueError("Missing process argument for non-fog telemetry probes.")
         if from_build_date:
             raise ValueError("Cannot use from_build_date with non-FOG data.")
-        return _get_non_fog_desktop_metric_table(probe, process, os)
+        result = _get_non_fog_desktop_metric_table(probe, process, os, label=label)
     else:
-        return _get_fog_desktop_metric_table(probe, os, from_build_date=from_build_date)
+        result = _get_fog_desktop_metric_table(
+            probe, os, from_build_date=from_build_date, label=label
+        )
+
+    if label is None and not result.empty:
+        metric_types = set(result["metric_type"].unique())
+        if metric_types & LABELED_METRIC_TYPES:
+            raise ValueError(
+                f"'{probe}' is a labeled metric (type: {metric_types & LABELED_METRIC_TYPES}). "
+                "Please provide a label using the `label` parameter."
+            )
+
+    return result

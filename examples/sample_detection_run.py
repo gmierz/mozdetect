@@ -12,7 +12,6 @@ print("Querying for data...")
 data = get_metric_table(
     "network_tls_handshake",
     "Windows",
-    process="content",
     use_fog=True,
     from_build_date="2025-09-13",
 )
